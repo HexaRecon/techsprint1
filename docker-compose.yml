@@ -37,7 +37,6 @@ services:
       - platform-network
     ports:
       - "9000:9000"
-      - "9000:9000"
       - "9001:9001"
 
   # --- Application Services ---
