@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login } from '@/lib/api';
 import { Github } from 'lucide-react';
 
 export default function LoginPage() {
@@ -12,21 +11,9 @@ export default function LoginPage() {
 
     // Temporarily keeping mock login but styling it as real
     // In next step, we swap this for window.location.href = API_URL + '/auth/github'
-    const handleLogin = async () => {
-        setLoading(true);
-        try {
-            // TODO: Replace with Real OAuth
-            // window.location.href = 'http://localhost:3001/auth/github';
-
-            // Simulating "Continue with GitHub" for now using the mock endpoint
-            // but presenting it as a "Demo" login if secrets aren't set
-            await login('dev');
-            router.push('/dashboard');
-        } catch (error) {
-            setError('Login failed. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    const handleLogin = () => {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        window.location.href = `${API_URL}/auth/github`;
     };
 
     return (
