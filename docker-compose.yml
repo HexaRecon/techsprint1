@@ -37,8 +37,56 @@ services:
       - platform-network
     ports:
       - "9000:9000"
+      - "9000:9000"
       - "9001:9001"
 
+  # --- Application Services ---
+  api:
+    build: 
+      context: .
+      dockerfile: packages/api/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/platform?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecret_dev_key
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - platform-network
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: packages/dashboard/Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    networks:
+      - platform-network
+
+  builder:
+    build:
+      context: .
+      dockerfile: packages/builder/Dockerfile
+    restart: always
+    environment:
+      REDIS_URL: redis://redis:6379
+      POSTGRES_URL: postgresql://user:password@postgres:5432/platform?schema=public
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - platform-network
   # --- Deployment Infrastructure ---
   traefik:
     image: traefik:v2.10
