@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MEMBER
+}
+
+enum DeploymentStatus {
+  CREATED
+  QUEUED
+  BUILDING
+  BUILD_FAILED
+  DEPLOYING
+  RUNNING
+  FAILED
+  STOPPED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  githubId  String   @unique
+  username  String
+  avatarUrl String?
+  email     String?
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+}
+
+model Project {
+  id             String   @id @default(uuid())
+  name           String
+  gitRepository  String   // e.g. "github.com/user/repo"
+  branch         String   @default("main")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+
+  deployments    Deployment[]
+  secrets        Secret[]
+  
+  // Custom Domain logic later
+  customDomain   String?
+}
+
+model Deployment {
+  id             String           @id @default(uuid())
+  projectId      String
+  project        Project          @relation(fields: [projectId], references: [id])
+  
+  status         DeploymentStatus @default(CREATED)
+  
+  commitHash     String
+  commitMessage  String?
+  
+  buildLogsPath  String?          // Path in Object Storage
+  imageTag       String?          // Docker image tag (e.g. registry:5000/app:v1)
+  
+  cpuLimit       Float            @default(0.5)
+  memoryLimit    Int              @default(512) // In MB
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Secret {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  
+  key       String
+  value     String   // Encrypted value
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, key])
+}
